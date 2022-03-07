@@ -1,29 +1,28 @@
-const express = require('express'),
-      mongoose = require('mongoose'),
-      path = require('path');
-      require('dotenv').config({path : path.resolve(__dirname, './.env')});
+(function(){
+    'use strict';
+    //import modules
+    const express = require('express'),
+    bodyParser = require('body-parser'),
+    path = require('path'),
+    mongoose = require('mongoose');
+    require('dotenv').config({path : path.resolve(__dirname , './.env')});
 
-//database connection
-mongoose.connect(process.env.DB_URI);
+    //import routes
+    const router = require('./routes/routes');
 
-//express initialize
-const app = express();
+    //Database connection
+    mongoose.connect(process.env.DB_URI);
 
-//
-// app.use('/' , (req, res, next) =>{
-//     res.sendFile(__dirname + "/views/index.html");
-// });
+    //initialize server
+    const app = express();
 
-app.get('/', (req , res, next) =>{
-    res.send('<h1>Hello world</h1>')
-});
+    //initialize body parser
+    app.use(bodyParser.urlencoded({extended : false}));
+    app.use(bodyParser.json());
 
-//set router
-const routes = require('./routes/routes.js');
+    //setting routes
+    app.use('/auth/api' , router);
 
-//use route
-app.use("/auth/api/" , routes);
-
-
-//listener port
-app.listen(process.env.PORT);
+    //listen PORT
+    app.listen(process.env.PORT || 3000);
+})();

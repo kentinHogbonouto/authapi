@@ -1,14 +1,18 @@
-//initialize express
-//d'où vient il la methode Router de l'object express ?
-const express = require('express');
-const router = express.Router();
+(function(){
+    'use strict';
+    //import modules
+    const express = require('express');
 
-//set controllers
-const controller = require("../controllers/contoller");
+    //initialize
+    const router = express.Router();
 
-//set routes
-router.get('/sign-up', controller.postSignUp);
-router.get('/sign-in', controller.getSignIn);
+    //import middleware
+    const middlController = require('../controllers/contoller');
 
-//export routes
-module.exports = router;
+    //routes config
+    router.post('/userSignUp' , middlController.userSignUp);
+    router.get('/userSignIn' , middlController.userSignIn);
+
+    //export routes
+    module.exports = router;
+})();
