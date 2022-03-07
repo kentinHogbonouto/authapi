@@ -4,12 +4,13 @@
   "description": "this project is about the global authentication api",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "start": "node server.js"
   },
   "author": "kentinHogbonouto",
   "license": "ISC",
   "dependencies": {
+    "@sendgrid/mail": "^7.6.1",
     "bcrypt": "^5.0.1",
     "body-parser": "^1.19.2",
     "cors": "^2.8.5",
@@ -19,6 +20,8 @@
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.4.0",
     "mongoose": "^6.2.4",
+    "nodemailer": "^6.7.2",
+    "nodemailer-sendgrid-transport": "^0.2.0",
     "nodemon": "^2.0.15"
   }
 }

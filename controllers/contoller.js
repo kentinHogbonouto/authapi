@@ -1,29 +1,26 @@
-(function(){
-    'use strict';
     //import modules
     const bcrypt = require('bcrypt'),
           User =  require('../models/model'),
-          {validationResult} = require('express-validator');
+          {validationResult} = require('express-validator'),
+          sendgridTransport = require('nodemailer-sendgrid-transport'),
+          nodemailer = require('nodemailer'),
+          sgMail = require('@sendgrid/mail');
     
     //post sign up middleware config
     exports.postSignUp =  (req , res) => {
-       const firstName = req.body.firstName;
-       const lastName = req.body.lastName;
-       const email = req.body.email;
+       const {firstName, lastName, email, password, confirmPassword } = req.body;
        const salt = bcrypt.genSaltSync(10);
-       const password = req.body.password;
-       const confirmPassword = req.body.confirmpassword;
-       
-       User.findOne({email : email}).then(userDoc => {
+
+       User.findOne({email}).then(userDoc => {
            if(userDoc){
              return  res.json({"message" : "this email already exist"});
            }
            return bcrypt.hash(password , salt);
            }).then(function(hashpassword){
                 const user = new User({
-                firstName : firstName,
-                lastName : lastName,
-                email : email,
+                firstName,
+                lastName,
+                email,
                 password : hashpassword
            });
            return user.save();
@@ -40,30 +37,16 @@
     
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(422).render('auth/api', {
-          path: '/userSignIn',
-          pageTitle: 'Login',
-          errorMessage: errors.array()[0].msg,
-          oldInput: {
-            email: email,
-            password: password
-          },
-          validationErrors: errors.array()
+        return res.status(422).json({
+          "message" : "something went wrong"
         });
       }
     
-      User.findOne({ email: email })
+      User.findOne({email})
         .then(user => {
           if (!user) {
-            return res.status(422).render('auth/userSignIn', {
-              path: '/userSignIn',
-              pageTitle: 'Login',
-              errorMessage: 'Invalid email or password.',
-              oldInput: {
-                email: email,
-                password: password
-              },
-              validationErrors: []
+            return res.status(422).json({
+              "message" : "users don't exist" 
             });
           }
           bcrypt
@@ -77,20 +60,14 @@
                   res.redirect('/');
                 });
               }
-              return res.status(422).render('auth/userSignIn', {
-                path: '/userSignIn',
-                pageTitle: 'Login',
-                errorMessage: 'Invalid email or password.',
-                oldInput: {
-                  email: email,
-                  password: password
-                },
-                validationErrors: []
+              return res.status(422).json({
+                firstName,
+                lastName,
+                email
               });
             })
             .catch(err => {
               console.log(err);
-              res.redirect('/userSignIn');
             });
         })
         .catch(err => {
@@ -101,16 +78,10 @@
     };
 
     //get sign in middleware config
-    exports.getSignIn = (req , res) =>{
-      res.render('auth/api', {
-        path : '/login',
-        pageTitle : 'signIn',
-        isAuthenticate : req.isLoggedIn
-      })
-    }
-
-    //reset mdp
+    exports.json({});
     
+
+    //reset mdp    
     //post reset
     exports.postReset = (req, res, next) => {
       crypto.randomBytes(32, (err, buffer) => {
@@ -162,6 +133,15 @@
         errorMessage: message
       });
     };
+
+    const set_Mail_Apy_key = sgMail.setApiKey(process.env.SEND_GRID_MAIL);
+    const transporter = nodemailer.createTransport(
+      sendgridTransport({
+        auth: {
+          api_key: set_Mail_Apy_key
+        }
+      })
+    );
 
     //New password
     //get new password
@@ -221,4 +201,3 @@
           return next(error);
         });
     };
-})();

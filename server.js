@@ -1,5 +1,3 @@
-(function(){
-    'use strict';
     //import modules
     const express = require('express'),
     bodyParser = require('body-parser'),
@@ -12,6 +10,14 @@
 
     //Database connection
     mongoose.connect(process.env.DB_URI);
+    // .then(db => {
+    //     console.log('connexion succed');
+    // }).catch(err => console.log(err));
+     const db = mongoose.connection;
+     db.on('error', console.error.bind(console, 'connection error:'));
+     db.once('open', function() {
+      console.log("connexion succeed");
+     });
 
     //initialize server
     const app = express();
@@ -25,4 +31,3 @@
 
     //listen PORT
     app.listen(process.env.PORT || 3000);
-})();
