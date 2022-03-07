@@ -10,8 +10,8 @@
     const middlController = require('../controllers/contoller');
 
     //routes config
-    router.post('/userSignUp' , middlController.userSignUp);
-    router.post('/userSignIn' , middlController.userSignIn);
+    router.post('/userSignUp' , middlController.postSignUp);
+    router.post('/userSignIn' , middlController.postSignIn);
 
     //export routes
     module.exports = router;
