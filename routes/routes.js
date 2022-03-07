@@ -11,7 +11,7 @@
 
     //routes config
     router.post('/userSignUp' , middlController.userSignUp);
-    router.get('/userSignIn' , middlController.userSignIn);
+    router.post('/userSignIn' , middlController.userSignIn);
 
     //export routes
     module.exports = router;
