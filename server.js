@@ -1,33 +1,26 @@
-    //import modules
-    const express = require('express'),
-    bodyParser = require('body-parser'),
-    path = require('path'),
-    mongoose = require('mongoose');
-    require('dotenv').config({path : path.resolve(__dirname , './.env')});
+//import modules
+const express = require("express"),
+  path = require("path"),
+  mongoose = require("mongoose");
+require("dotenv").config({ path: path.resolve(__dirname, "./.env") });
 
-    //import routes
-    const router = require('./routes/routes');
+//import routes
+const router = require("./routes/routes");
 
-    //Database connection
-    mongoose.connect(process.env.DB_URI);
-    // .then(db => {
-    //     console.log('connexion succed');
-    // }).catch(err => console.log(err));
-     const db = mongoose.connection;
-     db.on('error', console.error.bind(console, 'connection error:'));
-     db.once('open', function() {
-      console.log("connexion succeed");
-     });
+//Database connection
+mongoose.connect(process.env.DB_URI).then(data => console.log("connect")).catch(err => console.log(err));
 
-    //initialize server
-    const app = express();
+//initialize server
+const app = express();
 
-    //initialize body parser
-    app.use(bodyParser.urlencoded({extended : false}));
-    app.use(bodyParser.json());
+//initialize body parser
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
-    //setting routes
-    app.use('/auth/api' , router);
+//setting routes
+app.use("/auth/api", router);
 
-    //listen PORT
-    app.listen(process.env.PORT || 3000);
+//listen PORT
+const PORT = process.env.PORT;
+app
+  .listen(PORT || 3000);
