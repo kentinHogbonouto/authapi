@@ -55,7 +55,7 @@ exports.postSignIn = (req, res, next) => {
 };
 
 //reset mdp
-const set_Mail_Apy_key = sgMail.setApiKey("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");
+const set_Mail_Apy_key = sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const transporter = nodemailer.createTransport(
   sendgridTransport({
     service : "Gmail",
