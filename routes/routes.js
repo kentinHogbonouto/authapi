@@ -1,6 +1,6 @@
 //import modules
 const express = require("express");
-const { body, validationResult } = require("express-validator/check");
+const { body, validationResult } = require("express-validator");
 
 //initialize
 const router = express.Router();
@@ -13,7 +13,7 @@ const User = require("../models/model");
 router.post(
   "/user-sign-up",
   [
-    check("email")
+    body("email")
       .isEmail()
       .withMessage("Please enter a valide email")
       .custom((value, { req }) => {
@@ -26,6 +26,7 @@ router.post(
         });
       })
       .normalizeEmail(),
+
     body("password", "please enter a password with at least 5 character")
       .isLength({ min: 5 })
       .isAlphanumeric()
@@ -36,17 +37,15 @@ router.post(
   middlController.postSignUp
 );
 router.post(
-  "/user-sign-in", 
-  [
-    check("email").isEmail(), 
-    body("password")
-    .isLength()
-    .isAlphanumeric()
-  ] , 
+  "/user-sign-in",
+  [body("email").isEmail(), body("password").isLength().isAlphanumeric()],
   middlController.postSignIn
 );
+router.get("user-sign-in-get", middlController.verifyToken);
 router.post("/user-reset-pass", middlController.postReset);
 router.post("/user-mail-update", middlController.postNewPassword);
+router.post("/token", middlController.postToken);
+router.use(require("./tokenChecker"));
 
 //export routes
 module.exports = router;
