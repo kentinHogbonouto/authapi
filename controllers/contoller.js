@@ -1,30 +1,28 @@
 //import modules
-const bcrypt = require("bcrypt");
-const User = require("../models/model");
-const crypto = require("crypto");
-const sgMail = require("@sendgrid/mail");
-const nodemailer = require("nodemailer");
-const tokenList = {};
-const { validationResult } = require("express-validator");
-const jwt = require("jsonwebtoken");
+const bcrypt=require("bcrypt");
+const User=require("../models/model");
+const crypto=require("crypto");
+const sgMail=require("@sendgrid/mail");
+const nodemailer=require("nodemailer");
+const tokenList={};
+const {validationResult}=require("express-validator");
+const jwt=require("jsonwebtoken");
 
-const jwtKey = process.env.JWT_KEY;
-const jwtExpSec = 300;
-const jwtRefreshExpSec = 8600;
-const jwtRefreshKey = process.env.JWT_REFRESH_KEY;
+const jwtKey=process.env.JWT_KEY;
+const jwtExpSec=300;
+const jwtRefreshExpSec=8600;
+const jwtRefreshKey=process.env.JWT_REFRESH_KEY;
 
 //post sign up middleware config
 exports.postSignUp = (req, res, next) => {
-  const { firstName, lastName, email, password } = req.body;
-  const confirmPassword = req.body.confirmPassword;
+  const {firstName,lastName,email,password,confirmPassword}=req.body;
 
-  const errors = validationResult(req);
-  console.log(errors);
-  if (errors.isEmpty()) {
-    res.json({ message: "You will put right information, please try again" });
+  const errors=validationResult(req);
+  if (!errors.isEmpty()){
+    res.json({message: "You will put right information, please try again"});
   }
-  const salt = bcrypt.genSaltSync(10);
-  User.findOne({ email })
+  const salt=bcrypt.genSaltSync(10);
+  User.findOne({email})
     .then((userDoc) => {
       if (userDoc) {
         res.json({ message: "this email already exist" });

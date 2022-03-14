@@ -41,7 +41,7 @@ router.post(
   [body("email").isEmail(), body("password").isLength().isAlphanumeric()],
   middlController.postSignIn
 );
-router.get("user-sign-in-get", middlController.verifyToken);
+router.get("/user-sign-in-get", middlController.verifyToken);
 router.post("/user-reset-pass", middlController.postReset);
 router.post("/user-mail-update", middlController.postNewPassword);
 router.post("/token", middlController.postToken);

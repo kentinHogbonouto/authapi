@@ -1,0 +1,119 @@
+openapi: "3.0.0"
+info: 
+  title: auth restful api documentation
+  description: This is an user authentication api using nodejs and express mainly
+  version: 0.1.9
+  contact:
+    email: kentin@intside.com
+  license: 
+    name: apach 2.0
+    url: http://apache.org
+servers: 
+  - url: http://127.0.0.1:8080/auth/api/
+    description: local server
+  - url: www.company.com/auth/api/
+    description: company server
+schemes: [http, https]
+
+paths:
+#user sign up setting documentation
+  /user-sign-up:
+    post:
+      summary: sign up user
+      description: user firstName lastName email and password in post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+                properties:
+                  firstName: 
+                    type: string
+                    required: true
+                  lastName:
+                    type: string
+                    required: true
+                  email: 
+                    type: string
+                    required: true
+                  password:
+                    type: string
+                    required: true
+      responses:
+        200:
+          description: Success
+
+#user sign in documentation
+  /auth/api/user-sign-in:
+    post:
+      summary: sign in user
+      description: user firstName lastName email and password in post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+                properties:
+                  email: 
+                    type: string
+                    required: true
+                  password:
+                    type: string
+                    required: true
+      responses:
+        200:
+          description: Success
+
+#reset password setting documentation
+  /user-reset-pass:
+    post:
+      summary: send user password reset email
+      description: user firstName lastName email and password in post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+                properties:
+                  email: 
+                    type: string
+                    required: true
+                  password:
+                    type: string
+                    required: true
+      responses:
+        200:
+          description: success
+        300:
+          description: internal link error
+        400:
+          description: client side error
+        500:
+          description: server side error
+  
+#new password setting documentation
+  /user-mail-update:
+    put:
+      summary: reset user password
+      description: To reset user password and get a new password
+      requestBody:
+        reuired: true
+        content:
+          application/json:
+            shema:
+              type: object
+                properties:
+                  email:
+                    type: string
+                    required: true
+                  password:
+                    type: string
+                    required: true
+      responses:
+        200: 
+          description: "ok"
+        404:
+          description: Not found
