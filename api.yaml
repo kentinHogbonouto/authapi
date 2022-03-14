@@ -45,7 +45,7 @@ paths:
           description: Success
 
 #user sign in documentation
-  /auth/api/user-sign-in:
+  /user-sign-in:
     post:
       summary: sign in user
       description: user firstName lastName email and password in post
@@ -70,7 +70,7 @@ paths:
   /user-reset-pass:
     post:
       summary: send user password reset email
-      description: user firstName lastName email and password in post
+      description: user mail
       requestBody:
         required: true
         content:
@@ -79,9 +79,6 @@ paths:
               type: object
                 properties:
                   email: 
-                    type: string
-                    required: true
-                  password:
                     type: string
                     required: true
       responses:
