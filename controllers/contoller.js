@@ -1,27 +1,27 @@
-//import modules
-const bcrypt=require("bcrypt");
-const User=require("../models/model");
-const crypto=require("crypto");
-const sgMail=require("@sendgrid/mail");
-// const nodemailer=require("nodemailer");
-const tokenList={};
-const {validationResult}=require("express-validator");
-const jwt=require("jsonwebtoken");
-
-const jwtKey=process.env.JWT_KEY;
-const jwtExpSec=300;
-const jwtRefreshExpSec=8600;
-const jwtRefreshKey=process.env.JWT_REFRESH_KEY;
+//import node modules
+const bcrypt = require("bcrypt");
+const User = require("../models/model");
+const crypto = require("crypto");
+const sgMail = require("@sendgrid/mail");
+const tokenList = {};
+const { validationResult } = require("express-validator");
+const jwt = require("jsonwebtoken");
+const jwtKey = process.env.JWT_KEY;
+const jwtExpSec = 300;
+const jwtRefreshExpSec = 8600;
+const jwtRefreshKey = process.env.JWT_REFRESH_KEY;
+const {INCORRECT_EMAIL, } = require("../validations/messages");
 
 //post sign up middleware config
 exports.postSignUp = (req, res, next) => {
-  const {firstName,lastName,email,password,confirmPassword}=req.body;
+  const { firstName, lastName, email, password, confirmPassword } = req.body;
 
-  const errors=validationResult(req);
+  const errors = validationResult(req);
+
   console.log(errors);
-  if (errors.isEmpty()){
-    const salt=bcrypt.genSaltSync(10);
-    User.findOne({email})
+  if (errors.isEmpty()) {
+    const salt = bcrypt.genSaltSync(10);
+    User.findOne({ email })
       .then(() => {
         return bcrypt.hash(password, salt);
       })
@@ -34,52 +34,58 @@ exports.postSignUp = (req, res, next) => {
         });
         return user.save();
       })
+      .then(() => {
+        res.json({ message: INCORRECT_EMAIL });
+      })
       .catch((err) => {
         console.log(err);
-      });  
+      });
   }
-  res.json({"message" : "succesfully sign up"});
   next();
 };
 
 //post sign in middleware config
 exports.postSignIn = (req, res, next) => {
-  const {email,password}=req.body;
+  const { email, password } = req.body;
   if (!email || !password) {
-    return res.statut(402).json({"message": "Password or email must not be empty"});
+    return res
+      .statut(402)
+      .json({ message: NOT_EMPTY_PASSWORD });
   }
-  const user={
+  const user = {
     email: email,
     password: password,
   };
-  const token=jwt.sign({user},jwtKey,{expiresIn: jwtExpSec});
-  const refreshToken=jwt.sign({user},jwtRefreshKey, {expiresIn: jwtRefreshExpSec});
-  const response={
+  const token = jwt.sign({ user }, jwtKey, { expiresIn: jwtExpSec });
+  const refreshToken = jwt.sign({ user }, jwtRefreshKey, {
+    expiresIn: jwtRefreshExpSec,
+  });
+  const response = {
     statut: "Logged In",
     token: token,
     refreshToken: refreshToken,
   };
-  tokenList[refreshToken]=response;
-  res.status(200).json({response});
+  tokenList[refreshToken] = response;
+  res.status(200).json({ response });
   next();
 };
 
 exports.postToken = (req, res) => {
-  const postData=req.body;
+  const postData = req.body;
 
   if (postData.refreshToken && postData.resetToken in tokenList) {
-    const user={
+    const user = {
       email: postData.email,
       password: postData.password,
     };
-    const token=jwt.sign({user},jwtKey,{expiresIn: jwtExpSec});
-    const response={
+    const token = jwt.sign({ user }, jwtKey, { expiresIn: jwtExpSec });
+    const response = {
       token: token,
     };
     tokenList[postData.refreshToken] = response;
     response.status(200).json(response);
   }
-  res.status(404).json({ message: "invalid request" });
+  res.status(404).json({ message: INVALID_REQUEST });
 };
 
 exports.verifyToken = (req, res, next) => {
@@ -89,62 +95,64 @@ exports.verifyToken = (req, res, next) => {
     req.token = bToken;
     next();
   }
-  res.json({ message: "Not log in" });
+  res.json({ message: NOT_LOGIN });
 };
 
 //post reset
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 exports.postReset = (req, res, next) => {
-  const {email}=req.body;
+  const { email } = req.body;
   console.log(email);
-  crypto.randomBytes(32, (err, buffer) =>{
-    if(err){
+  const msg  = {
+    to: email,
+    from: "kentinhogbonouto1@gmail.com",
+    subject: "Reset password instructions",
+    html: `
+          <strong>
+            Hello ${email}<br>
+          </strong>
+          <p>
+            Someone has requested a link to change your password. 
+            You can do this through the link below: http://127.0.0.1/auth/api/user-reset-pass/${token}
+            or copy and open this link in your browser:
+            <a href="http://127.0.0.1/auth/api/user-reset-pass/${token}">change password</a>
+            If you didn't request this, please ignore this email.
+            Your password won't change until you access the link above and create a new one.
+          </p>
+        `,
+  }; 
+  crypto.randomBytes(32, (err, buffer) => {
+    if (err) {
       console.log(err);
     }
-    const token = buffer.toString('hex');
-      User.findOne({email}).then(user=>{
-      if(!user){
-        req.flash('err', 'No account with that email found');
-      }
-      user.resetToken = token;
-      user.resetTokenExpiration = Date.now() + 3600000;
-      return user.save();
-    }).then(result =>{
-        const msg = {
-        to: email,
-        from: 'kentinhogbonouto1@gmail.com',
-        subject: 'Reset password instructions',
-        html: `
-                <strong>
-                  Hello ${email}<br>
-                </strong>
-                <p>
-                  Someone has requested a link to change your password. 
-                  You can do this through the link below: http://127.0.0.1/auth/api/user-reset-pass/${token}
-                  or copy and open this link in your browser:
-                  <a href="http://127.0.0.1/auth/api/user-reset-pass/${token}">change password</a>
-                  If you didn't request this, please ignore this email.
-                  Your password won't change until you access the link above and create a new one.
-                </p>
-              `,
-      };
-      sgMail.send(msg);
-      console.log(result.statusCode);
-      console.log(result.headers);
-    })
-    .catch((error) => {
-      console.error(error);
-    });
+    const token = buffer.toString("hex");
+    User.findOne({ email })
+      .then((user) => {
+        if (!user) {
+          req.flash("err", NO_ACCOUNT);
+        }
+        user.resetToken = token;
+        user.resetTokenExpiration = Date.now() + 3600000;
+        return user.save();
+      })
+      .then(response =>{
+        return sgMail.send(msg);
+      })
+      .then(response =>{
+        console.log(response);
+        res.json({ message: PASS_RESET_MAIL });
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   });
-res.json({"message":"reset email send succesfully"});
 };
 
 //New password
 //post new password
 exports.postNewPassword = (req, res, next) => {
   const newPassword = req.body.password;
-  const userId = req.body.userId;
-  const passwordToken = req.body.passwordToken;
+  const { userId, passwordToken } = req.body;
   let resetUser;
 
   User.findOne({

@@ -103,10 +103,10 @@ paths:
             shema:
               type: object
                 properties:
-                  email:
+                  newpassword:
                     type: string
                     required: true
-                  password:
+                  confirmNewPassword:
                     type: string
                     required: true
       responses:
