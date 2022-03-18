@@ -91,26 +91,27 @@ paths:
         500:
           description: server side error
   
-#new password setting documentation
+#send email request
   /user-mail-update:
     put:
-      summary: reset user password
-      description: To reset user password and get a new password
+      summary: send user password reset email
+      description: user mail
       requestBody:
-        reuired: true
+        required: true
         content:
           application/json:
-            shema:
+            schema:
               type: object
                 properties:
-                  newpassword:
-                    type: string
-                    required: true
-                  confirmNewPassword:
+                  email: 
                     type: string
                     required: true
       responses:
-        200: 
-          description: "ok"
-        404:
-          description: Not found
+        200:
+          description: success
+        300:
+          description: internal link error
+        400:
+          description: client side error
+        500:
+          description: server side error
