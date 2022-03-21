@@ -2,150 +2,187 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/model");
 const crypto = require("crypto");
-const sgMail = require("@sendgrid/mail");
 const tokenList = {};
 const { validationResult } = require("express-validator");
-const jwt = require("jsonwebtoken");
-const jwtKey = process.env.JWT_KEY;
-const jwtExpSec = 300;
-const jwtRefreshExpSec = 8600;
-const jwtRefreshKey = process.env.JWT_REFRESH_KEY;
-const {INCORRECT_EMAIL, } = require("../validations/messages");
+const createUserToken = require("../helpers/createUserToken");
+const {
+  INCORRECT_EMAIL,
+  USER_ALREADY_EXIST,
+  NOT_EMPTY_PASSWORD,
+  INVALID_REQUEST,
+  NOT_LOGIN,
+  NO_ACCOUNT,
+  PASS_RESET_MAIL,
+} = require("../validations/messages");
+const { selectFields } = require("express-validator/src/select-fields");
+const { urlencoded } = require("body-parser");
 
 //post sign up middleware config
 exports.postSignUp = (req, res, next) => {
-  const { firstName, lastName, email, password, confirmPassword } = req.body;
-
   const errors = validationResult(req);
-
   console.log(errors);
-  if (errors.isEmpty()) {
-    const salt = bcrypt.genSaltSync(10);
-    User.findOne({ email })
-      .then(() => {
-        return bcrypt.hash(password, salt);
-      })
-      .then((hashpassword) => {
-        const user = new User({
-          firstName,
-          lastName,
-          email,
-          password: hashpassword,
-        });
-        return user.save();
-      })
-      .then(() => {
-        res.json({ message: INCORRECT_EMAIL });
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+  if (!errors.isEmpty()) {
+    const error = new Error("validation failed");
+    error.status = 422;
+    error.data = errors.array();
+    throw error;
   }
-  next();
+
+  const { firstName, lastName, email, password } = req.body;
+  const salt = bcrypt.genSaltSync(10);
+  User.findOne({ email })
+    .then((userInfo) => {
+      if (userInfo) {
+        const error = new Error(USER_ALREADY_EXIST);
+        error.status = 403;
+        throw error;
+      }
+      return bcrypt.hash(password, salt);
+    })
+    .then((hashpassword) => {
+      const user = new User({
+        firstName,
+        lastName,
+        email,
+        password: hashpassword,
+      });
+      return user.save();
+    })
+    .then((userInfo) => {
+      console.log(userInfo);
+      return User.findById(userInfo._id);
+    })
+    .then((userInfo) => {
+      const token = createUserToken(
+        userInfo._id.toString(),
+        userInfo.email,
+        userInfo.status
+      );
+      console.log("user successfully signup", userInfo);
+
+      /**
+       * TODO
+       * successfully message
+       * Welcom email to the client
+       */
+
+      res.status(201).json({
+        message: "successfully sign up",
+        user: userInfo,
+        token: token,
+        success: true,
+      });
+    })
+    .catch((err) => {
+      if (!err.status) {
+        err.status = 500;
+      }
+      next(err);
+    });
 };
 
-//post sign in middleware config
+//post sign middleware config
 exports.postSignIn = (req, res, next) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res
-      .statut(402)
-      .json({ message: NOT_EMPTY_PASSWORD });
-  }
-  const user = {
-    email: email,
-    password: password,
-  };
-  const token = jwt.sign({ user }, jwtKey, { expiresIn: jwtExpSec });
-  const refreshToken = jwt.sign({ user }, jwtRefreshKey, {
-    expiresIn: jwtRefreshExpSec,
-  });
-  const response = {
-    statut: "Logged In",
-    token: token,
-    refreshToken: refreshToken,
-  };
-  tokenList[refreshToken] = response;
-  res.status(200).json({ response });
-  next();
-};
+  let loadedUser;
 
-exports.postToken = (req, res) => {
-  const postData = req.body;
-
-  if (postData.refreshToken && postData.resetToken in tokenList) {
-    const user = {
-      email: postData.email,
-      password: postData.password,
-    };
-    const token = jwt.sign({ user }, jwtKey, { expiresIn: jwtExpSec });
-    const response = {
-      token: token,
-    };
-    tokenList[postData.refreshToken] = response;
-    response.status(200).json(response);
-  }
-  res.status(404).json({ message: INVALID_REQUEST });
-};
-
-exports.verifyToken = (req, res, next) => {
-  const header = req.headers["...authorization"];
-  if (typeof header !== "undefined") {
-    const bToken = header.split("")[1];
-    req.token = bToken;
-    next();
-  }
-  res.json({ message: NOT_LOGIN });
-};
-
-//post reset
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-exports.postReset = (req, res, next) => {
-  const { email } = req.body;
-  console.log(email);
-  const msg  = {
-    to: email,
-    from: "kentinhogbonouto1@gmail.com",
-    subject: "Reset password instructions",
-    html: `
-          <strong>
-            Hello ${email}<br>
-          </strong>
-          <p>
-            Someone has requested a link to change your password. 
-            You can do this through the link below: http://127.0.0.1/auth/api/user-reset-pass/${token}
-            or copy and open this link in your browser:
-            <a href="http://127.0.0.1/auth/api/user-reset-pass/${token}">change password</a>
-            If you didn't request this, please ignore this email.
-            Your password won't change until you access the link above and create a new one.
-          </p>
-        `,
-  }; 
-  crypto.randomBytes(32, (err, buffer) => {
-    if (err) {
-      console.log(err);
-    }
-    const token = buffer.toString("hex");
-    User.findOne({ email })
-      .then((user) => {
-        if (!user) {
-          req.flash("err", NO_ACCOUNT);
-        }
-        user.resetToken = token;
-        user.resetTokenExpiration = Date.now() + 3600000;
-        return user.save();
-      })
-      .then(response =>{
-        return sgMail.send(msg);
-      })
-      .then(response =>{
-        console.log(response);
-        res.json({ message: PASS_RESET_MAIL });
-      })
-      .catch((error) => {
-        console.error(error);
+  User.findOne({ email })
+    .select("email password")
+    .then((user) => {
+      if (!user) {
+        const error = new Error();
+        error.status = 403;
+        throw error;
+      }
+      loadedUser = user;
+      if (!user.password) {
+        const error = new Error();
+        error.status = 403;
+        throw error;
+      }
+      return bcrypt.compare(password || "", user.password);
+    })
+    .then((isEqual) => {
+      if (!isEqual) {
+        const error = new Error();
+        error.status = 403;
+        throw error;
+      }
+      const token = createUserToken(
+        loadedUser._id.toString(),
+        loadedUser.email,
+        loadedUser.status
+      );
+      res.status(200).json({
+        message: "successfully authenticated",
+        token: token,
+        success: true,
       });
-  });
+    })
+    .catch((err) => {
+      if (!err.status) {
+        err.status = 500;
+      }
+      next(err);
+    });
+};
+
+//post reset email sender config
+exports.sendPasswordResetEmail = (req, res, next) => {
+  const errors = validationResult(req);
+  console.log(errors);
+  if (!errors.isEmpty()) {
+    const error = new Error("validation failed");
+    error.status = 500;
+    throw error;
+  }
+
+  const { email } = req.body;
+  User.findOne({ email })
+    .select("+resetToken +resetTokenExpiration")
+    .then((user) => {
+      if (!user) {
+        const error = new Error();
+        error.status = 403;
+        throw error;
+      }
+      crypto.randomBytes(32, (err, buffer) => {
+        const token = buffer.toString("Hex");
+        if (err) {
+          const error = new Error("");
+          error.status = 403;
+          throw error;
+        }
+        User.findOne({ email }).then((user) => {
+          if (!user) {
+            const error = new Error("");
+            error.status = 403;
+            throw error;
+          }
+          user.resetToken = token;
+          user.resetTokentExpiration = Date.now() + 3600000;
+          user.save();
+        });
+      });
+    })
+    .then((user) => {
+      /**
+       * TODO
+       * send reset email to user
+       */
+    })
+    .then(() => {
+      res.status(200).json({
+        message: "Email successfully sent",
+        success: true,
+      });
+    })
+    .catch((err) => {
+      if (!err.status) {
+        err.status = 500;
+      }
+      next(err);
+    });
 };
 
 //New password
