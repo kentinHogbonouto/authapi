@@ -1,14 +1,14 @@
 openapi: "3.0.0"
-info: 
+info:
   title: auth restful api documentation
   description: This is an user authentication api using nodejs and express mainly
   version: 0.1.9
   contact:
     email: kentin@intside.com
-  license: 
+  license:
     name: apach 2.0
     url: http://apache.org
-servers: 
+servers:
   - url: http://127.0.0.1:8080/auth/api/
     description: local server
   - url: www.company.com/auth/api/
@@ -16,102 +16,79 @@ servers:
 schemes: [http, https]
 
 paths:
-#user sign up setting documentation
+  tags:
+    "user authentication"
+#user sign up documentation
   /user-sign-up:
     post:
-      summary: sign up user
-      description: user firstName lastName email and password in post
+      summary: Creates a user.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-                properties:
-                  firstName: 
-                    type: string
-                    required: true
-                  lastName:
-                    type: string
-                    required: true
-                  email: 
-                    type: string
-                    required: true
-                  password:
-                    type: string
-                    required: true
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
       responses:
-        200:
-          description: Success
-
-#user sign in documentation
+        "201":
+          description: Created
+#user sign up documentation
   /user-sign-in:
     post:
-      summary: sign in user
-      description: user firstName lastName email and password in post
+      summary: Creates a user.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-                properties:
-                  email: 
-                    type: string
-                    required: true
-                  password:
-                    type: string
-                    required: true
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
       responses:
-        200:
-          description: Success
-
-#reset password setting documentation
+        "201":
+          description: sign in
+#send user password resseting mail documentation
   /user-reset-pass:
     post:
-      summary: send user password reset email
-      description: user mail
+      summary: send users password reset email.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-                properties:
-                  email: 
-                    type: string
-                    required: true
+              properties:
+                email:
+                  type: string
       responses:
-        200:
-          description: success
-        300:
-          description: internal link error
-        400:
-          description: client side error
-        500:
-          description: server side error
-  
-#password update request setting
-  /user-mail-update:
-    put:
-      summary: send user password reset email
-      description: user mail
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
+        "201":
+          description: email sent
+#users password reset documentation
+  /user-password-update:
+      put:
+        summary: send users password reset email.
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
                 properties:
-                  email: 
+                  email:
                     type: string
-                    required: true
-      responses:
-        200:
-          description: success
-        300:
-          description: internal link error
-        400:
-          description: client side error
-        500:
-          description: server side error
+                  password:
+                    type: string
+        responses:
+          "201":
+            description: password reset

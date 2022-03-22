@@ -188,28 +188,41 @@ exports.sendPasswordResetEmail = (req, res, next) => {
 //New password
 //post new password
 exports.postNewPassword = (req, res, next) => {
-  const newPassword = req.body.password;
-  const { userId, passwordToken } = req.body;
-  let resetUser;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error("validation failed");
+    error.statut = 500;
+    error.data = errors.array();
+    throw errors;
+  }
 
-  User.findOne({
-    resetToken: passwordToken,
-    resetTokenExpiration: { $gt: Date.now() },
-    _id: userId,
-  })
+  const { password, email } = req.body;
+  let loadedUser;
+
+  User.findOne({ email })
+    .select("password resetToken resetTokenExpiration")
     .then((user) => {
-      resetUser = user;
-      return bcrypt.hash(newPassword, 12);
+      if (!user) {
+        const error = new Error("");
+        error.statut = 404;
+        throw error;
+      }
+      loadedUser = user;
+      return bcrypt.hash(password, 12);
     })
     .then((hashedPassword) => {
-      resetUser.password = hashedPassword;
-      resetUser.resetToken = undefined;
-      resetUser.resetTokenExpiration = undefined;
-      return resetUser.save();
+      loadedUser.password = hashedPassword;
+      return true; /*TODO reset password token*/
+    })
+    .then((user) => {
+      res
+        .status(201)
+        .json({ message: "Password succesfully changed", success: true });
     })
     .catch((err) => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+      if (!err.status) {
+        err.status = 500;
+      }
+      next(err);
     });
 };

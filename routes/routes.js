@@ -42,13 +42,6 @@ router.post(
       .withMessage("please enter a password with at least 5 character")
       .isAlphanumeric()
       .withMessage("Your password must contains the special charactere"),
-
-    // body("confirmPassword").custom((value, {req}) => {
-    //   if(value !== req.body.password){
-    //     throw new Error("Password doesn't match");
-    //   }
-    //   return true;
-    // })
   ],
   middlController.postSignUp
 );
@@ -58,25 +51,48 @@ router.post(
   [body("email").isEmail(), body("password").isLength().isAlphanumeric()],
   middlController.postSignIn
 );
-router.post("/user-reset-pass", [
-  body("email")
+router.post(
+  "/user-reset-pass",
+  [
+    body("email")
       .isEmail()
       .withMessage("Please enter a valide email")
       .custom((value, { req }) => {
         return User.findOne({ email: value }).then((userDoc) => {
           if (!userDoc) {
-            return Promise.reject(
-              "email not exist"
-            );
+            return Promise.reject("email not exist");
           }
           return true;
         });
       })
       .normalizeEmail(),
-], 
-middlController.sendPasswordResetEmail);
-router.post("/user-mail-update", middlController.postNewPassword);
-router.use(require("./tokenChecker"));
+  ],
+  middlController.sendPasswordResetEmail
+);
+router.put(
+  "/user-password-update",
+  [
+    body("email")
+      .isEmail()
+      .withMessage("Please enter valide email")
+      .custom((value, { req }) => {
+        return User.findOne({ email: value }).then((userDoc) => {
+          if (!userDoc) {
+            return Promise.reject("Email doesn't exist");
+          }
+          return true;
+        });
+      })
+      .normalizeEmail(),
+
+    body("password")
+      .isLength({ min: 5 })
+      .withMessage("Please enter a password with at least 5 character")
+      .isAlphanumeric()
+      .withMessage("Your password must not contains a special charactere"),
+  ],
+  middlController.postNewPassword
+);
 
 //export routes
 module.exports = router;
