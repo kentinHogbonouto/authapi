@@ -16,9 +16,8 @@ servers:
 schemes: [http, https]
 
 paths:
-  tags:
-    "user authentication"
-#user sign up documentation
+  tags: "user authentication"
+  #user sign up documentation
   /user-sign-up:
     post:
       summary: Creates a user.
@@ -40,7 +39,7 @@ paths:
       responses:
         "201":
           description: Created
-#user sign up documentation
+  #user sign up documentation
   /user-sign-in:
     post:
       summary: Creates a user.
@@ -58,7 +57,7 @@ paths:
       responses:
         "201":
           description: sign in
-#send user password resseting mail documentation
+  #send user password resseting mail documentation
   /user-reset-pass:
     post:
       summary: send users password reset email.
@@ -74,21 +73,21 @@ paths:
       responses:
         "201":
           description: email sent
-#users password reset documentation
+  #users password reset documentation
   /user-password-update:
-      put:
-        summary: send users password reset email.
-        requestBody:
-          required: true
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  email:
-                    type: string
-                  password:
-                    type: string
-        responses:
-          "201":
-            description: password reset
+    put:
+      summary: send users password reset email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "201":
+          description: password reset
